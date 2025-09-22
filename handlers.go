@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"log"
+	"strings"
 )
 
 func handlerReadiness(w http.ResponseWriter, r *http.Request) {
@@ -17,51 +17,39 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request){
 		Body string `json:"body"`
 	}
 
+	type SuccessReturnVals struct {
+		SuccessMessage 	string `json:"cleaned_body"`
+	}
+
 	decoder := json.NewDecoder(r.Body)
-	params := &parameters{}
+	// decoder.DisallowUnknownFields()
+	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		log.Printf("Error decoding parameters %s", err)
-		w.WriteHeader(500)
+		JSONErrorResponse(w, http.StatusBadRequest, "Couldn't decode parameters", err)
 		return
 	}
 
-	
-	if len(params.Body) > 140{	
-		type returnVals struct {
-			ErrorMessage 	string `json:"error"`
-		}
+	const chirpCharLimit = 140
+	if len(params.Body) > chirpCharLimit {	
+		JSONErrorResponse(w, http.StatusBadRequest, "Chirp is too long", nil)
+		return
+	} 
 
-		respBody := returnVals{
-			ErrorMessage: "Chirp is too long",
+	profane_replacement := "****"
+	profane_list := []string{"kerfuffle", "sharbert", "fornax"}
+	bodyMsg := strings.Split(params.Body, " ")
+	for i, word := range bodyMsg {
+		for _, invalid_word := range profane_list{
+			if invalid_word == strings.ToLower(word) {
+				bodyMsg[i] = profane_replacement
+			}
 		}
-		data, err := json.Marshal(respBody)
-		if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		w.Write(data)
-	} else {
-
-	
-		type SuccessReturnVals struct {
-				SuccessMessage 	bool `json:"valid"`
-		}
-		respBody := SuccessReturnVals{
-			SuccessMessage: true,
-		}
-		data, err := json.Marshal(respBody)
-
-		if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
-		w.Write(data)
 	}
+	cleanedMessage := strings.Join(bodyMsg, " ")
+	respBody := SuccessReturnVals{
+		SuccessMessage: cleanedMessage,
+	}
+	respondWithJSON(w, http.StatusOK, respBody)
+	
 }
