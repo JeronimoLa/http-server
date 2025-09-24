@@ -5,38 +5,37 @@ import (
 	"net/http"
 	"strings"
 
-
-	"github.com/jeronimoLa/http-server/internal/database"
 	"github.com/google/uuid"
+	"github.com/jeronimoLa/http-server/internal/database"
 )
 
 type Chirp struct {
-	Body 	string `json:"body"`
-	UserID  uuid.UUID `json:"user_id"`
+	Body   string    `json:"body"`
+	UserID uuid.UUID `json:"user_id"`
 }
 
 func NewChirpResponse(u database.Chirp) ChirpResponse {
 	return ChirpResponse{
-		ChirpID: 	u.ChirpID,
-		CreatedAt: 	u.CreatedAt,
-		UpdatedAt: 	u.UpdatedAt,
-		Body: 		u.Body,	
-		ID:			u.ID,
+		ChirpID:   u.ChirpID,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+		Body:      u.Body,
+		ID:        u.ID,
 	}
 }
 
-func validateChirp(w http.ResponseWriter, ReqBody *Chirp) database.AddChirpsToUserParams { 
+func validateChirp(w http.ResponseWriter, ReqBody *Chirp) database.AddChirpsToUserParams {
 	const chirpCharLimit = 140
-	if len(ReqBody.Body) > chirpCharLimit {	
+	if len(ReqBody.Body) > chirpCharLimit {
 		JSONErrorResponse(w, http.StatusBadRequest, "Chirp is too long", nil)
 		return database.AddChirpsToUserParams{}
-	} 
+	}
 
 	profane_replacement := "****"
 	profane_list := []string{"kerfuffle", "sharbert", "fornax"}
 	bodyMsg := strings.Split(ReqBody.Body, " ")
 	for i, word := range bodyMsg {
-		for _, invalid_word := range profane_list{
+		for _, invalid_word := range profane_list {
 			if invalid_word == strings.ToLower(word) {
 				bodyMsg[i] = profane_replacement
 			}
@@ -45,7 +44,7 @@ func validateChirp(w http.ResponseWriter, ReqBody *Chirp) database.AddChirpsToUs
 	cleanedMessage := strings.Join(bodyMsg, " ")
 	params := database.AddChirpsToUserParams{
 		Body: cleanedMessage,
-		ID:	ReqBody.UserID,
+		ID:   ReqBody.UserID,
 	}
 	return params
 }

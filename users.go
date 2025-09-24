@@ -25,22 +25,20 @@ func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respBody := NewUserResponse(user)
-	
 	respondWithJSON(w, http.StatusCreated, respBody)
-
 }
 
 func NewUserResponse(u database.User) UserResponse {
 	return UserResponse{
-		ID: 		u.ID,
-		CreatedAt: 	u.CreatedAt,
-		UpdatedAt: 	u.UpdatedAt,
-		Email: 		u.Email,	
+		ID:        u.ID,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+		Email:     u.Email,
 	}
 }
 
 func (cfg *apiConfig) handlerDeleteUsers(w http.ResponseWriter, r *http.Request) {
-	if cfg.platform != "dev"{
+	if cfg.platform != "dev" {
 		w.WriteHeader(http.StatusForbidden)
 	}
 	cfg.db.DeleteAllUsers(r.Context())

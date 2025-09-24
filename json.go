@@ -1,9 +1,9 @@
 package main
 
 import (
-	"net/http"
 	"encoding/json"
 	"log"
+	"net/http"
 )
 
 func JSONErrorResponse(w http.ResponseWriter, code int, msg string, err error) {
@@ -15,7 +15,7 @@ func JSONErrorResponse(w http.ResponseWriter, code int, msg string, err error) {
 	}
 
 	type errorResponse struct {
-		ErrorMessage 	string `json:"error"`
+		ErrorMessage string `json:"error"`
 	}
 	respBody := errorResponse{
 		ErrorMessage: msg,
@@ -26,7 +26,7 @@ func JSONErrorResponse(w http.ResponseWriter, code int, msg string, err error) {
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	data, err := json.Marshal(payload) // Marshal returns the JSON encoding of the argument.
-	if err != nil{
+	if err != nil {
 		log.Printf("Error marshalling JSON: %s", err)
 		w.WriteHeader(500)
 		return

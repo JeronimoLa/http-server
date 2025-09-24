@@ -9,8 +9,8 @@ import (
 )
 
 type apiConfig struct {
-	platform 	string
-	db 			*database.Queries
+	platform       string
+	db             *database.Queries
 	fileserverHits atomic.Int32
 }
 
@@ -28,4 +28,3 @@ type ChirpResponse struct {
 	Body      string    `json:"body"`
 	ID        uuid.UUID `json:"user_id"`
 }
-

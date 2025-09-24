@@ -17,19 +17,17 @@ func main() {
 	platform := os.Getenv("PLATFORM")
 
 	db, err := sql.Open("postgres", dbURL)
-	if err != nil{
+	if err != nil {
 		log.Println(err)
 	}
 	dbQueries := database.New(db)
-
-
 
 	const port = "8080"
 	const filepathRoot = "."
 
 	apiCfg := &apiConfig{
 		platform: platform,
-		db: dbQueries,
+		db:       dbQueries,
 	}
 	mux := http.NewServeMux()
 
@@ -39,18 +37,16 @@ func main() {
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerDeleteUsers)
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	// mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
-	mux.HandleFunc("POST /api/users" , apiCfg.handlerUsers)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerUsers)
 	mux.HandleFunc("POST /api/chirps", apiCfg.handleChirps)
 
-
 	server := &http.Server{
-		Addr:		":" + port,
-		Handler: 	mux,
+		Addr:    ":" + port,
+		Handler: mux,
 	}
 
 	server.ListenAndServe()
 	log.Print("Listening...")
 	log.Printf("Serving on port: %s\n", port)
 	log.Fatal(server.ListenAndServe())
-}	
-
+}
