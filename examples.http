@@ -41,8 +41,20 @@ POST http://localhost:8080/api/users HTTP/1.1
 content-type: application/json
 
 {
-  "email": "user1@example.com"
+  "password": "04234",
+  "email": "lane@example.com"
 }
+
+### 
+POST http://localhost:8080/api/login HTTP/1.1
+content-type: application/json
+
+{
+  "password": "042e34",
+  "email": "lane@example.com"
+}
+
+
 
 ###
 POST http://localhost:8080/admin/reset HTTP/1.1
@@ -55,9 +67,14 @@ content-type: application/json
 
 {
   "body": "Hello, world!",
-  "user_id": "90fdc97f-bc1f-474e-98d2-1eaae275b3d9"
+  "user_id": "eea465fd-2dc8-4f54-9a74-1405afed4f92"
 }
 
+###
+GET http://localhost:8080/api/chirps HTTP/1.1
+
+###
+GET http://localhost:8080/api/chirps/123e4567-e89b-12d3-a456-426614174059 HTTP/1.1
 
 
 

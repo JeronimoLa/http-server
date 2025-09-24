@@ -1,18 +1,5 @@
 -- name: CreateUser :one
-INSERT INTO users (id, created_at, updated_at, email)
-VALUES (
-    gen_random_uuid(),
-    NOW(),
-    NOW(),
-    $1
-)
-RETURNING *;
-
--- name: DeleteAllUsers :exec
-DELETE FROM users;
-
--- name: AddChirpsToUser :one
-INSERT INTO chirps (chirp_id, created_at, updated_at, body, id)
+INSERT INTO users (id, created_at, updated_at, email, hashed_password)
 VALUES (
     gen_random_uuid(),
     NOW(),
@@ -22,3 +9,27 @@ VALUES (
 )
 RETURNING *;
 
+-- name: DeleteAllUsers :exec
+DELETE FROM users;
+
+-- name: AddChirpsToUser :one
+INSERT INTO chirps (id, created_at, updated_at, body, user_id)
+VALUES (
+    gen_random_uuid(),
+    NOW(),
+    NOW(),
+    $1,
+    $2
+)
+RETURNING *;
+
+-- name: GetAllChirps :many
+SELECT * FROM chirps;
+
+-- name: GetSingleChirp :one
+SELECT * FROM chirps
+WHERE id = $1; 
+
+-- name: GetPasswordByEmail :one
+SELECT * from users
+WHERE email = $1;
