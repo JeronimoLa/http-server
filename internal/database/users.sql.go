@@ -7,7 +7,39 @@ package database
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
+
+const addChirpsToUser = `-- name: AddChirpsToUser :one
+INSERT INTO chirps (chirp_id, created_at, updated_at, body, id)
+VALUES (
+    gen_random_uuid(),
+    NOW(),
+    NOW(),
+    $1,
+    $2
+)
+RETURNING chirp_id, created_at, updated_at, body, id
+`
+
+type AddChirpsToUserParams struct {
+	Body string
+	ID   uuid.UUID
+}
+
+func (q *Queries) AddChirpsToUser(ctx context.Context, arg AddChirpsToUserParams) (Chirp, error) {
+	row := q.db.QueryRowContext(ctx, addChirpsToUser, arg.Body, arg.ID)
+	var i Chirp
+	err := row.Scan(
+		&i.ChirpID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Body,
+		&i.ID,
+	)
+	return i, err
+}
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, created_at, updated_at, email)
@@ -30,4 +62,13 @@ func (q *Queries) CreateUser(ctx context.Context, email string) (User, error) {
 		&i.Email,
 	)
 	return i, err
+}
+
+const deleteAllUsers = `-- name: DeleteAllUsers :exec
+DELETE FROM users
+`
+
+func (q *Queries) DeleteAllUsers(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteAllUsers)
+	return err
 }
