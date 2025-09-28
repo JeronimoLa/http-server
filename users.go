@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	// "fmt"
 	"log"
 	"net/http"
 	"time"
@@ -9,19 +10,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/jeronimoLa/http-server/internal/auth"
 	"github.com/jeronimoLa/http-server/internal/database"
-
 )
 
 type UserParameters struct {
-		Password	string `json:"password"`
-		Email 		string `json:"email"`
-	}
+	Password			string	`json:"password"`
+	Email 				string	`json:"email"`
+	ExpiresInSeconds	int		`json:"expires_in_seconds"`
+}
 
 type UserResponse struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
+	ID			uuid.UUID 	`json:"id"`
+	CreatedAt 	time.Time 	`json:"created_at"`
+	UpdatedAt 	time.Time 	`json:"updated_at"`
+	Email     	string    	`json:"email"`
+	Token		string		`json:"token,omitempty"` // if this field has its zero value, don’t include it in the JSON output.
 }
 
 func NewUserResponse(u database.User) UserResponse {
@@ -87,8 +89,21 @@ func (cfg *apiConfig) HanderLogin(w http.ResponseWriter, r *http.Request) {
 		JSONErrorResponse(w, http.StatusUnauthorized, "incorrect email or password", err)
 		return
 	}
+	var expiresIn time.Duration
+	defaultExpirationTime := 60 * time.Second
+	if params.ExpiresInSeconds <= 0 || params.ExpiresInSeconds > int(defaultExpirationTime.Seconds()) {
+		expiresIn = defaultExpirationTime
+	} else {
+		expiresIn = time.Duration(params.ExpiresInSeconds) * time.Second
+	}
+
+	token, err := auth.MakeJWT(data.ID, cfg.tokenSecret, expiresIn)
+	if err != nil {
+		JSONErrorResponse(w, http.StatusBadRequest, "token was not created, try again", err)
+	}
 
 	respBody := NewUserResponse(data)
+	respBody.Token = token
 	respondWithJSON(w, http.StatusOK, respBody)
 
 }

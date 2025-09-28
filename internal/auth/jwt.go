@@ -2,6 +2,8 @@ package auth
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -31,6 +33,10 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 		return uuid.UUID{}, fmt.Errorf("invalid token claims")
 	}
 
+	if time.Now().After(claims.ExpiresAt.Local()) {
+		return uuid.UUID{}, fmt.Errorf("token is expired")
+	}
+
 	userID, err := uuid.Parse(claims.Subject)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("invalid subject UUID: %w", err)
@@ -38,4 +44,13 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 
 	return userID, nil
 
+}
+
+func GetBearerToken(headers http.Header) (string, error) {
+	bearerToken := headers.Get("Authorization")
+	cleanedToken, ok := strings.CutPrefix(bearerToken, "Bearer ")
+	if !ok {
+		return "", fmt.Errorf("bearer part of string not in Authorization header value")
+	}
+	return cleanedToken, nil
 }

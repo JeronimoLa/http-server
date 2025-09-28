@@ -6,7 +6,8 @@ import (
 )
 
 type apiConfig struct {
-	platform       string
-	db             *database.Queries
-	fileserverHits atomic.Int32
+	platform		string
+	db				*database.Queries
+	tokenSecret		string
+	fileserverHits	atomic.Int32
 }
