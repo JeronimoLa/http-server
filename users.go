@@ -90,7 +90,7 @@ func (cfg *apiConfig) HanderLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var expiresIn time.Duration
-	defaultExpirationTime := 60 * time.Second
+	defaultExpirationTime := 3600 * time.Second
 	if params.ExpiresInSeconds <= 0 || params.ExpiresInSeconds > int(defaultExpirationTime.Seconds()) {
 		expiresIn = defaultExpirationTime
 	} else {

@@ -2,18 +2,20 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
-	"sort"
+
 	// "log"
 	"github.com/google/uuid"
+	"github.com/jeronimoLa/http-server/internal/auth"
 	"github.com/jeronimoLa/http-server/internal/database"
 )
 
 type Chirp struct {
-	Body   string    `json:"body"`
-	UserID uuid.UUID `json:"user_id"`
+	Body 	string    `json:"body"`
 }
 
 type ChirpResponse struct {
@@ -34,11 +36,14 @@ func NewChirpResponse(u database.Chirp) ChirpResponse {
 	}
 }
 
-func validateChirp(w http.ResponseWriter, ReqBody *Chirp) database.AddChirpsToUserParams {
+func validateChirp(ReqBody *Chirp) (database.AddChirpsToUserParams, error) {
 	const chirpCharLimit = 140
+	if len(ReqBody.Body) == 0 {
+		return database.AddChirpsToUserParams{}, fmt.Errorf("body key-valye is empty")
+	}
+
 	if len(ReqBody.Body) > chirpCharLimit {
-		JSONErrorResponse(w, http.StatusBadRequest, "Chirp is too long", nil)
-		return database.AddChirpsToUserParams{}
+		return database.AddChirpsToUserParams{}, fmt.Errorf("Chirp is too long")
 	}
 
 	profane_replacement := "****"
@@ -54,22 +59,41 @@ func validateChirp(w http.ResponseWriter, ReqBody *Chirp) database.AddChirpsToUs
 	cleanedMessage := strings.Join(bodyMsg, " ")
 	params := database.AddChirpsToUserParams{
 		Body: cleanedMessage,
-		UserID:   ReqBody.UserID,
 	}
-	return params
+	return params, nil
 }
 
 func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		JSONErrorResponse(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	ReqBody := Chirp{}
-	err := decoder.Decode(&ReqBody)
+	err = decoder.Decode(&ReqBody)
 	if err != nil {
 		JSONErrorResponse(w, http.StatusBadRequest, "Couldn't decode parameters", err)
 		return
 	}
-	params := validateChirp(w, &ReqBody)
 
-	chirpDetails, err := cfg.db.AddChirpsToUser(r.Context(), params)
+	userID, err := auth.ValidateJWT(token, cfg.tokenSecret)
+	if err != nil {
+		JSONErrorResponse(w, http.StatusBadRequest, "Couldn't validate token", err)
+		return
+	}
+
+	params, err := validateChirp(&ReqBody)
+	if err != nil {
+		JSONErrorResponse(w, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+	
+	chirpDetails, err := cfg.db.AddChirpsToUser(r.Context(), database.AddChirpsToUserParams{
+		Body: params.Body,
+		UserID: userID,
+	})
 	if err != nil {
 		JSONErrorResponse(w, http.StatusBadRequest, "Something went wrong with updating chirp to user", err)
 		return
