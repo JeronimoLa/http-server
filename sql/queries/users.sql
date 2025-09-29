@@ -12,24 +12,14 @@ RETURNING *;
 -- name: DeleteAllUsers :exec
 DELETE FROM users;
 
--- name: AddChirpsToUser :one
-INSERT INTO chirps (id, created_at, updated_at, body, user_id)
-VALUES (
-    gen_random_uuid(),
-    NOW(),
-    NOW(),
-    $1,
-    $2
-)
-RETURNING *;
-
--- name: GetAllChirps :many
-SELECT * FROM chirps;
-
--- name: GetSingleChirp :one
-SELECT * FROM chirps
-WHERE id = $1; 
 
 -- name: GetPasswordByEmail :one
 SELECT * from users
 WHERE email = $1;
+
+
+-- name: UpdateEmailAndPassword :one
+UPDATE users
+SET email = $1, hashed_password = $2
+WHERE id = $3
+RETURNING *;

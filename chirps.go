@@ -80,7 +80,7 @@ func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := auth.ValidateJWT(token, cfg.tokenSecret)
 	if err != nil {
-		JSONErrorResponse(w, http.StatusBadRequest, "Couldn't validate token", err)
+		JSONErrorResponse(w, http.StatusUnauthorized, "Couldn't validate token", err)
 		return
 	}
 

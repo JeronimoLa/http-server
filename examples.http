@@ -3,46 +3,13 @@ curl http://localhost:8080/app
 ###
 curl http://localhost:8080/admin/metrics
 
-###
-POST http://localhost:8080/api/validate_chirp HTTP/1.1
-content-type: application/json
-
-{
-  "body": "I had something interesting for breakfast"
-}
-
-###
-POST http://localhost:8080/api/validate_chirp HTTP/1.1
-content-type: application/json
-
-{
-  "body": "I hear Mastodon is better than Chirpy. sharbert I need to migrate",
-  "extra": "this should be ignored"
-}
-
-###
-POST http://localhost:8080/api/validate_chirp HTTP/1.1
-content-type: application/json
-
-{
-  "body": "I really need a kerfuffle to go to bed sooner, Fornax !"
-}
-
-###
-POST http://localhost:8080/api/validate_chirp HTTP/1.1
-content-type: application/json
-
-{
-  "body": "lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-}
-
 ### 
 POST http://localhost:8080/api/users HTTP/1.1
 content-type: application/json
 
 {
   "password": "04234",
-  "email": "lane@example.com"
+  "email": "jeronimo@example.com"
 }
 
 ### 
@@ -50,34 +17,53 @@ POST http://localhost:8080/api/login HTTP/1.1
 content-type: application/json
 
 {
-  "password": "042e34",
-  "email": "lane@example.com"
+  "email": "jeronimo@example.com",
+  "password": "04234"
 }
-
 
 
 ###
 POST http://localhost:8080/admin/reset HTTP/1.1
 
 
+Authorization: Bearer
 
 ###
 POST http://localhost:8080/api/chirps HTTP/1.1
 content-type: application/json
+Authorization: Bearer 
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiJmMDM1NmU3OS03YzkwLTQ4ZTMtYmMwYS1jOGEwMjc1ZDkxZDkiLCJleHAiOjE3NTkxMjAyOTAsImlhdCI6MTc1OTExNjY5MH0.PXS9LQzyvAgrgHHvnsOk0kW5m-FpeOwtMkm71_ZibVs
 
 {
-  "body": "Hello, world!",
-  "user_id": "eea465fd-2dc8-4f54-9a74-1405afed4f92"
+  "body": "jeronimo here"
 }
 
 ###
 GET http://localhost:8080/api/chirps HTTP/1.1
 
 ###
-GET http://localhost:8080/api/chirps/123e4567-e89b-12d3-a456-426614174059 HTTP/1.1
+GET http://localhost:8080/api/chirps/f0356e79-7c90-48e3-bc0a-c8a0275d91d9 HTTP/1.1
+
+
+###
+POST http://localhost:8080/api/refresh HTTP/1.1
+Authorization: Bearer ea2c1a321b7b6441532586c7b31d141531d037041c2ef7bac83f996030cff00a
 
 
 
+###
+POST http://localhost:8080/api/revoke HTTP/1.1
+Authorization: Bearer ea2c1a321b7b6441532586c7b31d141531d037041c2ef7bac83f996030cff00a
+
+
+###
+PUT  http://localhost:8080/api/users HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiIxOTJmOTQ1MS0yMzc1LTQ2YmYtOGJlOC04NGVhNzA3OGJkODkiLCJleHAiOjE3NTkxNzQ4MzMsImlhdCI6MTc1OTE3MTIzM30.UC871Ut8c_juJEyjO-Ht0CbSVcUEq0-CPe3HYeQYQbw
+
+{
+  "email": "jeronimo-new@example.com",
+  "password": "1129"
+}
 
 
 

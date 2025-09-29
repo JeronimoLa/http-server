@@ -11,36 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const addChirpsToUser = `-- name: AddChirpsToUser :one
-INSERT INTO chirps (id, created_at, updated_at, body, user_id)
-VALUES (
-    gen_random_uuid(),
-    NOW(),
-    NOW(),
-    $1,
-    $2
-)
-RETURNING id, created_at, updated_at, body, user_id
-`
-
-type AddChirpsToUserParams struct {
-	Body   string
-	UserID uuid.UUID
-}
-
-func (q *Queries) AddChirpsToUser(ctx context.Context, arg AddChirpsToUserParams) (Chirp, error) {
-	row := q.db.QueryRowContext(ctx, addChirpsToUser, arg.Body, arg.UserID)
-	var i Chirp
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Body,
-		&i.UserID,
-	)
-	return i, err
-}
-
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, created_at, updated_at, email, hashed_password)
 VALUES (
@@ -80,39 +50,6 @@ func (q *Queries) DeleteAllUsers(ctx context.Context) error {
 	return err
 }
 
-const getAllChirps = `-- name: GetAllChirps :many
-SELECT id, created_at, updated_at, body, user_id FROM chirps
-`
-
-func (q *Queries) GetAllChirps(ctx context.Context) ([]Chirp, error) {
-	rows, err := q.db.QueryContext(ctx, getAllChirps)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Chirp
-	for rows.Next() {
-		var i Chirp
-		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Body,
-			&i.UserID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getPasswordByEmail = `-- name: GetPasswordByEmail :one
 SELECT id, created_at, updated_at, email, hashed_password from users
 WHERE email = $1
@@ -131,20 +68,28 @@ func (q *Queries) GetPasswordByEmail(ctx context.Context, email string) (User, e
 	return i, err
 }
 
-const getSingleChirp = `-- name: GetSingleChirp :one
-SELECT id, created_at, updated_at, body, user_id FROM chirps
-WHERE id = $1
+const updateEmailAndPassword = `-- name: UpdateEmailAndPassword :one
+UPDATE users
+SET email = $1, hashed_password = $2
+WHERE id = $3
+RETURNING id, created_at, updated_at, email, hashed_password
 `
 
-func (q *Queries) GetSingleChirp(ctx context.Context, id uuid.UUID) (Chirp, error) {
-	row := q.db.QueryRowContext(ctx, getSingleChirp, id)
-	var i Chirp
+type UpdateEmailAndPasswordParams struct {
+	Email          string
+	HashedPassword string
+	ID             uuid.UUID
+}
+
+func (q *Queries) UpdateEmailAndPassword(ctx context.Context, arg UpdateEmailAndPasswordParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateEmailAndPassword, arg.Email, arg.HashedPassword, arg.ID)
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Body,
-		&i.UserID,
+		&i.Email,
+		&i.HashedPassword,
 	)
 	return i, err
 }
