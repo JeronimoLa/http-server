@@ -28,6 +28,7 @@ type UserResponse struct {
 	Email        string    `json:"email"`
 	Token        string    `json:"token,omitempty"` // if this field has its zero value, don’t include it in the JSON output.
 	RefreshToken string    `json:"refresh_token,omitempty"`
+	IsChirpyRed  bool      `json:"is_chirpy_red"`
 }
 
 type RefreshTokenReponse struct {
@@ -36,10 +37,11 @@ type RefreshTokenReponse struct {
 
 func NewUserResponse(u database.User) UserResponse {
 	return UserResponse{
-		ID:        u.ID,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
-		Email:     u.Email,
+		ID:          u.ID,
+		CreatedAt:   u.CreatedAt,
+		UpdatedAt:   u.UpdatedAt,
+		Email:       u.Email,
+		IsChirpyRed: u.IsChirpyRed.Bool,
 	}
 }
 
@@ -180,7 +182,7 @@ func (cfg *apiConfig) handlerRefreshToken(w http.ResponseWriter, r *http.Request
 
 	respondWithJSON(w, http.StatusOK, RefreshTokenReponse{
 		AccessToken: NewAccessToken,
-	} )
+	})
 }
 
 func (cfg *apiConfig) handlerRevokeRefreshToken(w http.ResponseWriter, r *http.Request) {
@@ -196,7 +198,7 @@ func (cfg *apiConfig) handlerRevokeRefreshToken(w http.ResponseWriter, r *http.R
 			Valid: true,
 		},
 		Token: refreshToken,
-		})
+	})
 	w.WriteHeader(204)
 }
 
@@ -226,11 +228,41 @@ func (cfg *apiConfig) handlerUpdateUserInfo(w http.ResponseWriter, r *http.Reque
 	}
 
 	updatedUser, err := cfg.db.UpdateEmailAndPassword(r.Context(), database.UpdateEmailAndPasswordParams{
-		Email: Resp.Email,
+		Email:          Resp.Email,
 		HashedPassword: hash,
-		ID: userID,
+		ID:             userID,
 	})
 
 	respondWithJSON(w, http.StatusOK, NewUserResponse(updatedUser))
+}
+
+func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request) {
+	ChirpID, err := uuid.Parse(r.PathValue("chirpID"))
+	if err != nil {
+		log.Println(err)
+	}
+
+	AccessToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		JSONErrorResponse(w, http.StatusUnauthorized, err.Error(), err)
+		return
+	}
+
+	UserID, err := auth.ValidateJWT(AccessToken, cfg.tokenSecret)
+	if err != nil {
+		JSONErrorResponse(w, http.StatusUnauthorized, "Couldn't validate token", err)
+		return
+	}
+
+	chirp, err := cfg.db.GetSingleChirp(r.Context(), ChirpID)
+	if errors.Is(err, sql.ErrNoRows) {
+		JSONErrorResponse(w, http.StatusNotFound, err.Error(), err)
+	}
+
+	if UserID != chirp.UserID {
+		JSONErrorResponse(w, http.StatusForbidden, "", err)
+		return
+	}
+	respondWithJSON(w, http.StatusNoContent, cfg.db.DeleteSingleChirp(r.Context(), ChirpID))
 
 }

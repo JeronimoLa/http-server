@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -15,20 +16,20 @@ import (
 )
 
 type Chirp struct {
-	Body 	string    `json:"body"`
+	Body string `json:"body"`
 }
 
 type ChirpResponse struct {
-	ID   		uuid.UUID `json:"id"`
-	CreatedAt 	time.Time `json:"created_at"`
-	UpdatedAt 	time.Time `json:"updated_at"`
-	Body      	string    `json:"body"`
-	UserID      uuid.UUID `json:"user_id"`
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Body      string    `json:"body"`
+	UserID    uuid.UUID `json:"user_id"`
 }
 
 func NewChirpResponse(u database.Chirp) ChirpResponse {
 	return ChirpResponse{
-		ID:   	   u.ID,
+		ID:        u.ID,
 		CreatedAt: u.CreatedAt,
 		UpdatedAt: u.UpdatedAt,
 		Body:      u.Body,
@@ -89,9 +90,9 @@ func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 		JSONErrorResponse(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
-	
+
 	chirpDetails, err := cfg.db.AddChirpsToUser(r.Context(), database.AddChirpsToUserParams{
-		Body: params.Body,
+		Body:   params.Body,
 		UserID: userID,
 	})
 	if err != nil {
@@ -103,27 +104,54 @@ func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) handlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
-	data, err := cfg.db.GetAllChirps(r.Context())
-	if err != nil {
-		JSONErrorResponse(w, http.StatusBadRequest, "Something went wrong with updating chirp to user", err)
-		return
-	} 
-	
+	var data []database.Chirp
+	var databaseError error
+	authorID := r.URL.Query().Get("author_id")
+	sortOrder := r.URL.Query().Get("sort")
+
+	if authorID == "" {
+		data, databaseError = cfg.db.GetAllChirps(r.Context())
+		if databaseError != nil {
+			JSONErrorResponse(w, http.StatusBadRequest, "Something went wrong with getting chirps", databaseError)
+			return
+		}
+	} else {
+
+		userID, err := uuid.Parse(authorID)
+		if err != nil {
+			JSONErrorResponse(w, http.StatusBadRequest, "invalid uuid", err)
+			return
+		}
+		log.Println(userID)
+		data, databaseError = cfg.db.GetAuthorChirps(r.Context(), userID)
+		log.Println(data)
+		if databaseError != nil {
+			JSONErrorResponse(w, http.StatusBadRequest, "Something went wrong with getting chirps for user", databaseError)
+			return
+		}
+	}
+
 	var chirps []ChirpResponse
 	for _, obj := range data {
 		chirps = append(chirps, NewChirpResponse(obj))
 	}
-	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].CreatedAt.Before(chirps[j].CreatedAt) 
-	})
-	
+	if sortOrder == "asc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].CreatedAt.Before(chirps[j].CreatedAt)
+		})
+	} else {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].CreatedAt.After(chirps[j].CreatedAt)
+		})
+	}
+
 	respondWithJSON(w, http.StatusOK, chirps)
 }
 
 func (cfg *apiConfig) handlerSingleChirp(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("chirpID"))
 	if err != nil {
-		JSONErrorResponse(w, http.StatusBadRequest, "invalid uuid", err )
+		JSONErrorResponse(w, http.StatusBadRequest, "invalid uuid", err)
 		return
 	}
 

@@ -15,7 +15,7 @@ func JSONErrorResponse(w http.ResponseWriter, code int, msg string, err error) {
 	}
 
 	type errorResponse struct {
-		ErrorMessage string `json:"error"`
+		ErrorMessage string `json:"error,omitempty"`
 	}
 	respBody := errorResponse{
 		ErrorMessage: msg,
