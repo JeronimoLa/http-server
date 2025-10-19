@@ -1,11 +1,11 @@
 package auth
 
 import (
+	"fmt"
+	"github.com/alexedwards/argon2id"
 	"log"
 	"net/http"
-	"fmt"
 	"strings"
-	"github.com/alexedwards/argon2id"
 )
 
 func HashPassword(password string) (string, error) {
@@ -24,14 +24,14 @@ func CheckPasswordHash(password, hash string) (bool, error) {
 func GetAPIKey(headers http.Header) (string, error) {
 	apiKey := headers.Get("Authorization")
 	if apiKey == "" {
-		return "", fmt.Errorf("no token provided")	
+		return "", fmt.Errorf("no token provided")
 	}
 
-	trimmedStr, ok := strings.CutPrefix(apiKey, "ApiKey")
+	trimmedKey, ok := strings.CutPrefix(apiKey, "ApiKey")
 	if !ok {
 		return "", fmt.Errorf("authorization header must start with Bearer")
 	}
-	cleanedApiKey := strings.TrimSpace(trimmedStr)
-	
-	return cleanedApiKey, nil
+	cleanApiKey := strings.TrimSpace(trimmedKey)
+
+	return cleanApiKey, nil
 }

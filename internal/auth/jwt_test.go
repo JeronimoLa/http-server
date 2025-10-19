@@ -1,7 +1,6 @@
 package auth
 
 import (
-
 	"testing"
 	"time"
 
@@ -11,42 +10,39 @@ import (
 func TestJWTCreation(t *testing.T) {
 
 	tests := []struct {
-		name		string
-		userID 		string
-		tokenSecret string
-		expiresIn 	time.Duration
-		wantErr		bool
+		name            string
+		userID          string
+		tokenSecret     string
+		expiresIn       time.Duration
+		wantErr         bool
 		wantValidateErr bool
 
 		// matchUserID	bool
 
 	}{
 		{
-			name:			"Valid userID",
-			userID:			"f0f05cf3-57ab-4783-bd37-d15641e2023a",
-			tokenSecret:	"secret-token",
-			expiresIn: 		10 * time.Second,
-			wantErr: 		false,
+			name:            "Valid userID",
+			userID:          "f0f05cf3-57ab-4783-bd37-d15641e2023a",
+			tokenSecret:     "secret-token",
+			expiresIn:       10 * time.Second,
+			wantErr:         false,
 			wantValidateErr: false,
-
 		},
 		{
-			name:			"Invalid userID",
-			userID:			"some-uuid",
-			tokenSecret:	"secret-token",
-			expiresIn: 		10 * time.Second,
-			wantErr: 		true,
+			name:            "Invalid userID",
+			userID:          "some-uuid",
+			tokenSecret:     "secret-token",
+			expiresIn:       10 * time.Second,
+			wantErr:         true,
 			wantValidateErr: false,
-
 		},
 		{
-			name:			"Expired token",
-			userID:			"f0f05cf3-57ab-4783-bd37-d15641e2023a",
-			tokenSecret:	"secret-token",
-			expiresIn: 		-5 * time.Second,
-			wantErr: 		false,
+			name:            "Expired token",
+			userID:          "f0f05cf3-57ab-4783-bd37-d15641e2023a",
+			tokenSecret:     "secret-token",
+			expiresIn:       -5 * time.Second,
+			wantErr:         false,
 			wantValidateErr: true,
-
 		},
 	}
 
@@ -63,22 +59,21 @@ func TestJWTCreation(t *testing.T) {
 			token, err := MakeJWT(userUUID, tt.tokenSecret, tt.expiresIn)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MakeJWT() error = %v, wantErr %v", err, tt.wantErr)
-    			return
+				return
 			}
 			if token == "" && !tt.wantErr {
-			    t.Errorf("expected a token, got empty string")
+				t.Errorf("expected a token, got empty string")
 			}
 			validatedUUID, err := ValidateJWT(token, tt.tokenSecret)
-			// err != nil → true if ValidateJWT returned an error. 
+			// err != nil → true if ValidateJWT returned an error.
 			// tt.wantValidateErr → your expected outcome (from the test case).`
-			if (err != nil) != tt.wantValidateErr {// 👉 “Did we get an error status that doesn’t match what we expected?”
-            	t.Errorf("ValidateJWT() error = %v, wantValidateErr %v", err, tt.wantValidateErr)
-        	}
+			if (err != nil) != tt.wantValidateErr { // 👉 “Did we get an error status that doesn’t match what we expected?”
+				t.Errorf("ValidateJWT() error = %v, wantValidateErr %v", err, tt.wantValidateErr)
+			}
 			if err == nil && validatedUUID != userUUID { // validating the correctness of the decoded data, but only if validation succeeded.
-        	    t.Errorf("expected userID %v, got %v", userUUID, validatedUUID)
-        	}	
-			
+				t.Errorf("expected userID %v, got %v", userUUID, validatedUUID)
+			}
+
 		})
 	}
 }
-

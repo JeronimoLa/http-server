@@ -12,10 +12,10 @@ import (
 
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Issuer: "chirpy",
-		IssuedAt: jwt.NewNumericDate(time.Now()), // seconds since Unix epoch.
+		Issuer:    "chirpy",
+		IssuedAt:  jwt.NewNumericDate(time.Now()), // seconds since Unix epoch.
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
-		Subject: userID.String(),
+		Subject:   userID.String(),
 	})
 	return token.SignedString([]byte(tokenSecret))
 }
@@ -49,13 +49,13 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 func GetBearerToken(headers http.Header) (string, error) {
 	bearerToken := headers.Get("Authorization")
 	if bearerToken == "" {
-		return "", fmt.Errorf("no token provided")	
+		return "", fmt.Errorf("no token provided")
 	}
 
 	cleanedToken, ok := strings.CutPrefix(bearerToken, "Bearer ")
 	if !ok {
 		return "", fmt.Errorf("authorization header must start with Bearer")
 	}
-	
+
 	return cleanedToken, nil
 }
