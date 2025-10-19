@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	// "log"
 	"github.com/google/uuid"
 	"github.com/jeronimoLa/http-server/internal/auth"
 	"github.com/jeronimoLa/http-server/internal/database"
@@ -40,7 +41,7 @@ func NewChirpResponse(u database.Chirp) ChirpResponse {
 func validateChirp(ReqBody *Chirp) (database.AddChirpsToUserParams, error) {
 	const chirpCharLimit = 140
 	if len(ReqBody.Body) == 0 {
-		return database.AddChirpsToUserParams{}, fmt.Errorf("body key-valye is empty")
+		return database.AddChirpsToUserParams{}, fmt.Errorf("body key-value is empty")
 	}
 
 	if len(ReqBody.Body) > chirpCharLimit {
@@ -162,5 +163,36 @@ func (cfg *apiConfig) handlerSingleChirp(w http.ResponseWriter, r *http.Request)
 	}
 	respBody := NewChirpResponse(data)
 	respondWithJSON(w, http.StatusOK, respBody)
+
+}
+
+func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request) {
+	ChirpID, err := uuid.Parse(r.PathValue("chirpID"))
+	if err != nil {
+		log.Println(err)
+	}
+
+	AccessToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		JSONErrorResponse(w, http.StatusUnauthorized, err.Error(), err)
+		return
+	}
+
+	UserID, err := auth.ValidateJWT(AccessToken, cfg.tokenSecret)
+	if err != nil {
+		JSONErrorResponse(w, http.StatusUnauthorized, "Couldn't validate token", err)
+		return
+	}
+
+	chirp, err := cfg.db.GetSingleChirp(r.Context(), ChirpID)
+	if errors.Is(err, sql.ErrNoRows) {
+		JSONErrorResponse(w, http.StatusNotFound, err.Error(), err)
+	}
+
+	if UserID != chirp.UserID {
+		JSONErrorResponse(w, http.StatusForbidden, "", err)
+		return
+	}
+	respondWithJSON(w, http.StatusNoContent, cfg.db.DeleteSingleChirp(r.Context(), ChirpID))
 
 }
